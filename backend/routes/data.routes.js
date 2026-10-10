@@ -26,6 +26,8 @@ router.get('/judge/ids', ctrl.judgeIds);
 router.get('/judge/my-scores', ctrl.judgeMyScores);
 router.delete('/reset-data', ctrl.resetData);
 router.post('/save-config', ctrl.saveConfig);
+router.post('/suggest-criteria', ctrl.suggestCriteria);
+router.post('/results-summary', ctrl.resultsSummary);
 router.post('/stream-ui', streamCtrl.stream);
 router.get('/system-config', ctrl.systemConfig);
 router.post('/save-system-config', ctrl.saveSystemConfig);

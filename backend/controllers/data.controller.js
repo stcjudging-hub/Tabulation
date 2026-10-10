@@ -1,6 +1,8 @@
 const HttpError = require('../utils/http-error');
 const dataService = require('../services/data.service');
 const historyService = require('../services/history.service');
+const criteriaAiService = require('../services/criteria-ai.service');
+const resultsSummaryService = require('../services/results-summary.service');
 const aiModels = require('../ai/ai-models');
 
 // ── SAFE AI MODEL METADATA (no credentials — names + ids only) ──
@@ -73,6 +75,17 @@ exports.resetData = async (req, res) => {
 
 exports.saveConfig = async (req, res) => {
   res.json(await dataService.saveConfig(req.school_id, req.body));
+};
+
+// ── AI-SUGGESTED CRITERIA (protected; uses the school's AI provider/model) ──
+exports.suggestCriteria = async (req, res) => {
+  const { description } = req.body || {};
+  res.json(await criteriaAiService.suggestCriteria(req.school_id, description));
+};
+
+// ── AI RESULTS SUMMARY (protected; narrates the computed standings) ──
+exports.resultsSummary = async (req, res) => {
+  res.json(await resultsSummaryService.summarize(req.school_id));
 };
 
 exports.systemConfig = async (req, res) => {

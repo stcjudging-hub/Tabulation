@@ -9,7 +9,8 @@ import {
   getOrdinal, ExportAllPanel,
   ErrorState, FullscreenView, HeroBanner, LoadingState, NavBar, RefreshBar,
   Table1FinalStandings, Table2JudgeSummary, Table3JudgeBreakdowns,
-  exportToCSV, exportToXLSX, exportToPNG
+  exportToCSV, exportToXLSX, exportToPNG,
+  AiResultsSummary
 } from './leaderboard/index';
 
 const DEFAULT_FS_CONFIG = {
@@ -324,6 +325,8 @@ const LeaderBoard = () => {
 
       <div className="max-w-5xl xl:max-w-[1440px] 2xl:max-w-[1920px] 3xl:max-w-[2560px] 4xl:max-w-[3200px] mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8">
         <ExportAllPanel onExportAll={handleExportAll} />
+
+        <AiResultsSummary />
 
         <Table1FinalStandings
           standings={standings}

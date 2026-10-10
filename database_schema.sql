@@ -71,11 +71,12 @@ CREATE TABLE IF NOT EXISTS `settings` (
   `contest_type` VARCHAR(50) DEFAULT 'pageant' COMMENT 'pageant, competition, etc.',
   `judge_count` INT DEFAULT 3,
   `ai_prompt` VARCHAR(255) DEFAULT 'Modern and Professional',
-  `ai_model` VARCHAR(50) DEFAULT 'qwen3.8-flash' COMMENT 'B.AI model id used for judge UI generation',
+  `ai_provider` VARCHAR(20) NOT NULL DEFAULT 'groq' COMMENT 'AI provider id used for judge UI generation (groq | gemini | openrouter)',
+  `ai_model` VARCHAR(50) DEFAULT 'openai/gpt-oss-120b' COMMENT 'AI model id used for judge UI generation',
   `ui_mode` VARCHAR(20) DEFAULT 'ai' COMMENT 'ai | default — ai=AI-generated judge UI, default=standard deterministic table',
   `computation_type` VARCHAR(50) DEFAULT 'average' COMMENT 'average, rank, or custom',
-  `custom_base` VARCHAR(20) DEFAULT 'average' COMMENT 'average or rank; used when computation_type=custom',
-  `tie_break_method` VARCHAR(20) DEFAULT 'midrank' COMMENT 'midrank, shared, or sequential; used when computation_type=custom',
+  `custom_base` VARCHAR(20) NOT NULL DEFAULT 'average' COMMENT 'average or rank; used when computation_type=custom',
+  `tie_break_method` VARCHAR(20) NOT NULL DEFAULT 'midrank' COMMENT 'midrank, shared, or sequential; used when computation_type=custom',
   `is_judge_locked` TINYINT DEFAULT 0 COMMENT '0=unlocked, 1=locked',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -201,15 +202,57 @@ CREATE TABLE IF NOT EXISTS `generations` (
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS `fullscreen_config` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `school_id` INT NOT NULL UNIQUE,
-  `bg_color` VARCHAR(7) DEFAULT '#1B4332',
-  `accent_color` VARCHAR(7) DEFAULT '#1B4332',
-  `text_color` VARCHAR(7) DEFAULT '#ffffff',
-  `title_text` VARCHAR(255) DEFAULT '',
-  `subtitle_text` VARCHAR(255) DEFAULT '',
+  `school_id` INT NOT NULL,
+  `bg_color` VARCHAR(20) DEFAULT NULL,
+  `accent_color` VARCHAR(20) DEFAULT NULL,
+  `text_color` VARCHAR(20) DEFAULT NULL,
+  `title_text` VARCHAR(255) DEFAULT NULL,
+  `subtitle_text` VARCHAR(255) DEFAULT NULL,
+  UNIQUE KEY `uniq_school_id` (`school_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- TABLE: sessions
+-- Description: Per-device presence + refresh-token sessions for admins/judges
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `sessions` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `school_id` INT NOT NULL,
+  `actor_type` ENUM('admin','judge') NOT NULL COMMENT 'who owns this device session',
+  `actor_id` INT NOT NULL COMMENT 'admins.id for admins, schools.id for judges',
+  `device_id` CHAR(36) NOT NULL COMMENT 'opaque per-device id; embedded in access JWTs',
+  `refresh_hash` CHAR(64) DEFAULT NULL COMMENT 'sha256 of the opaque 7-day refresh token',
+  `last_seen` DATETIME NOT NULL COMMENT 'presence heartbeat — drives online/offline status',
+  `expires_at` DATETIME NOT NULL COMMENT 'refresh-token expiry (login + 7 days)',
+  `logged_out_at` DATETIME NULL DEFAULT NULL COMMENT 'set when the user signs out from this device',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_fullscreen_config_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `uq_sessions_device` (`device_id`),
+  KEY `idx_sessions_school_presence` (`school_id`, `logged_out_at`, `last_seen`),
+  KEY `idx_sessions_refresh` (`refresh_hash`),
+  CONSTRAINT `fk_sessions_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- TABLE: config_history
+-- Description: Per-save audit snapshot of the admin's contest configuration
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `config_history` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `school_id` INT NOT NULL,
+  `contest_name` VARCHAR(255) DEFAULT NULL COMMENT 'contest name at save time',
+  `judge_count` INT DEFAULT NULL COMMENT 'judge count at save time',
+  `ui_mode` VARCHAR(20) DEFAULT NULL COMMENT 'configured judge UI mode at save time: ai|default',
+  `design_type` ENUM('ai','default') DEFAULT NULL COMMENT 'ui_cache design stored for this save',
+  `prompt_hash` VARCHAR(32) DEFAULT NULL COMMENT 'links to the matching ui_cache row',
+  `computation_type` VARCHAR(20) DEFAULT NULL COMMENT 'average|rank|custom at save time',
+  `tie_break_method` VARCHAR(20) DEFAULT NULL COMMENT 'midrank|shared|sequential at save time',
+  `snapshot` JSON DEFAULT NULL COMMENT 'full settings + criteria + contestants snapshot for this save',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `school_id` (`school_id`),
+  KEY `created_at` (`created_at`),
+  CONSTRAINT `fk_config_history_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================

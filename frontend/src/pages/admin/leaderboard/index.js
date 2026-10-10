@@ -1,4 +1,5 @@
 export {default as CheckIcon} from './CheckIcon'
+export {default as AiResultsSummary} from './AiResultsSummary'
 export {default as DownloadIcon} from './DownloadIcon'
 export {default as ErrorState} from './ErrorState'
 export {default as ExportAllPanel} from './ExportAllPanel'

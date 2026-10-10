@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../../services/api';
 import CriteriaManager from './CreteriaManager';
+import AiCriteriaSuggest from './AiCriteriaSuggest';
 import { useContestContext } from '../../../context/ContestContext';
 import { logoutRemote, clearAdminSession } from '../../../services/session';
 import {
@@ -250,7 +251,10 @@ const SectionRender = ({
         />
       )}
       {activeNav === 'criteria' && (
-        <CriteriaManager criteria={criteria} setCriteria={setCriteria} newCrit={newCrit} setNewCrit={setNewCrit} addCriterion={addCriterion} />
+        <>
+          <AiCriteriaSuggest setCriteria={setCriteria} contestName={contestName} />
+          <CriteriaManager criteria={criteria} setCriteria={setCriteria} newCrit={newCrit} setNewCrit={setNewCrit} addCriterion={addCriterion} />
+        </>
       )}
       {activeNav === 'judges' && (
         <JudgesSection
