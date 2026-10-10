@@ -1,6 +1,6 @@
 import React from "react";
 import DefaultJudgeUIPreview from './DefaultJudgeUIPreview.jsx';
-import AiGenerationTerminal from '../components/AiGenerationTerminal';
+import GenerationProgress from '../components/GenerationProgress';
 import apiClient from '../../../services/api';
 
 import { card } from './card.js'
@@ -89,6 +89,25 @@ const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiM
             <div>Judges get the <strong>standard scoring table</strong> instantly — dropdowns for each criterion, automatic totals and ranks. No AI generation, no waiting, fully offline-safe.</div>
           </div>
           <DefaultJudgeUIPreview contestants={contestants} criteria={criteria} contestName={contestName} />
+          {(aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error') && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
+                Generation Progress
+              </div>
+              <GenerationProgress
+                variant="inline"
+                open
+                status={aiGen.status}
+                text={aiGen.text}
+                error={aiGen.error}
+                model={aiGen.model}
+                startedAt={aiGen.startedAt}
+                cached={aiGen.cached}
+                generationId={aiGen.generationId}
+                title="Saving Judge UI"
+              />
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -183,12 +202,12 @@ const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiM
             </div>
           </div>
 
-          {(aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error' || aiGen?.text) && (
+          {(aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error') && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
-                Generation Log — the code the AI produced when you saved
+                Generation Progress
               </div>
-              <AiGenerationTerminal
+              <GenerationProgress
                 variant="inline"
                 open
                 status={aiGen.status}

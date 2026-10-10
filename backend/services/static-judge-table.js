@@ -290,7 +290,7 @@ const initial = escAttr(String(judgeName || 'J').trim().charAt(0).toUpperCase() 
     /* ---------- table ---------- */
     .sts-table {
       width: 100%;
-      min-width: 800px;
+      min-width: ${tableMin}px;
       border-collapse: separate;
       border-spacing: 0;
       table-layout: fixed;
@@ -365,18 +365,14 @@ const initial = escAttr(String(judgeName || 'J').trim().charAt(0).toUpperCase() 
     .sts-col-tot { width: 100px; }
     .sts-col-rank { width: 84px; }
 
-    /* ---------- sticky first columns ---------- */
+    /* ---------- first columns scroll normally (NOT pinned) ----------
+       No. and Name used to be horizontally sticky, which fought the phone
+       scroll (pinned columns + hardcoded left offsets). They now scroll with
+       the rest of the row so horizontal scrolling is clean everywhere. */
     .sts-sticky {
-      position: sticky;
-      z-index: 1;
+      position: static;
       background: inherit;
     }
-    .sts-sticky-num { left: 0; }
-    .sts-sticky-name {
-      left: 60px; /* = .sts-col-num width */
-      box-shadow: 1px 0 0 0 var(--c-divider);
-    }
-    .sts-table thead th.sts-sticky { z-index: 4; }
 
     /* ---------- body ---------- */
     .sts-table tbody tr { position: relative; }
@@ -546,7 +542,6 @@ const initial = escAttr(String(judgeName || 'J').trim().charAt(0).toUpperCase() 
     /* ---------- small screens ---------- */
     @media (max-width: 768px) {
       .sts-header { flex-wrap: wrap; padding: var(--sp-4); }
-      .sts-table { min-width: 680px; }
       .sts-table thead th.sts-th { padding: var(--sp-3) var(--sp-2); }
       .sts-table tbody td { padding: var(--sp-2) var(--sp-2); }
       .sts-table thead th.sts-col-name { padding-left: var(--sp-4); }

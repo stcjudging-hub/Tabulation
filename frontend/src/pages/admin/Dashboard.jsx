@@ -4,7 +4,7 @@ import AdminLayout from "../../layouts/AdminLayout";
 import Button from "../../components/ui/Button";
 import { ConfirmDialog } from "../../components/ui";
 import SectionRender from "./sections/sectionRender"
-import AiGenerationTerminal from "./components/AiGenerationTerminal";
+import GenerationProgress from "./components/GenerationProgress";
 import { streamUiUi } from "../../utils/streamUi";
 import apiClient from "../../services/api";
 import { useConfigChange } from '../../context/ConfigChangeContext';
@@ -385,7 +385,7 @@ function Dashboard() {
         </div>
       )}
 
-      <AiGenerationTerminal
+      <GenerationProgress
         variant="modal"
         open={aiGen.active}
         status={aiGen.status}

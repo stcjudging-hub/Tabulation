@@ -26,7 +26,7 @@ export default function Header({ navigate }) {
       <nav
         className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
           isScrolled
-            ? 'bg-white/60 backdrop-blur-md  border-white/40 shadow-sm'
+            ? 'bg-white border-white/40 shadow-sm lg:bg-white/60 lg:backdrop-blur-md'
             : 'bg-[#FBFCF9]  '
         }`}
       >
@@ -98,6 +98,15 @@ export default function Header({ navigate }) {
           </div>
         )}
       </nav>
+
+      {/* Tap-outside overlay — closes the mobile menu when the page is tapped. */}
+      {isMenuOpen && (
+        <div
+          onClick={() => setIsMenuOpen(false)}
+          aria-hidden="true"
+          className="md:hidden fixed inset-0 z-40 bg-[#14201A]/45"
+        />
+      )}
 
       {createPortal(
         <SignInModal

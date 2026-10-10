@@ -59,10 +59,28 @@ export function GlobalStyles() {
         overflow-wrap: normal;
         box-sizing: border-box;
       }
+      /* The rich static table ships its own min-width (the exact sum of its
+         fixed column widths) and must be allowed to overflow its .sts-scroll
+         wrapper so judges can scroll it horizontally on phones.
+         Never force min-width:0 here — that squeezes the fixed-width columns
+         into a broken, overlapping layout on narrow screens. */
       .ai-rendered-content .sts-table {
         width: 100% !important;
-        min-width: 0 !important;
         table-layout: fixed !important;
+      }
+      /* The No./Name cells must NEVER be pinned. An older cached design can
+         still ship the sticky-first-column rules, which on phones pins No. +
+         Name and leaves only the criteria column scrollable (so the score
+         dropdowns look cut). Neutralize the pin regardless of the cached CSS. */
+      .ai-rendered-content .sts-table .sts-sticky {
+        position: static !important;
+        left: auto !important;
+      }
+      .ai-rendered-content .sts-table .sts-sticky-name {
+        box-shadow: none !important;
+      }
+      .ai-rendered-content .sts-table thead th.sts-sticky {
+        z-index: auto !important;
       }
       .ai-rendered-content .sts-wrap {
         width: auto !important;
