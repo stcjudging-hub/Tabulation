@@ -74,6 +74,10 @@ const SystemConfigSection = ({
     <div className="panel p-4 sm:p-6 flex flex-col gap-6">
       <div className="section-heading" style={{ margin: 0 }}>System Configuration</div>
 
+      {/* Two columns on desktop · stacks on tablet/mobile */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+        <div>
+          <div className="flex flex-col gap-6 xl:sticky xl:top-6">
       {/* Tab switcher */}
       <div style={{ display: 'flex', gap: 3, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: 4 }}>
         {tabs.map(tab => (
@@ -176,6 +180,9 @@ const SystemConfigSection = ({
         </div>
       )}
 
+          </div>
+        </div>
+        <div className="flex flex-col gap-4">
       {/* Live preview — always visible */}
       <div>
         <div className="field-label" style={{ marginBottom: 10 }}>
@@ -203,6 +210,8 @@ const SystemConfigSection = ({
               </div>
             </div>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>

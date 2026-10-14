@@ -26,9 +26,12 @@ const MODE_OPTIONS = [
   { id: 'default', label: 'Default UI',     desc: 'Standard built-in scoring table — no AI used.' },
 ];
 
+const PRESET_PREVIEW_COUNT = 6;
+
 const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiModel, setAiModel, uiMode, setUiMode, contestants, criteria, contestName, aiGen }) => {
   const [activeTheme, setActiveTheme] = React.useState(null);
   const [providers, setProviders] = React.useState([]);
+  const [showAllPresets, setShowAllPresets] = React.useState(false);
 
   // Providers + models come from the backend (GET /ai-models) — the server is
   // the one source of truth. Only provider names + model ids are exposed here.
@@ -58,12 +61,34 @@ const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiM
   }, [aiProvider, aiModel, providers, setAiModel]);
 
   const selectedModel = models.includes(aiModel) ? aiModel : (models[0] || '');
+  const visiblePresets = showAllPresets ? THEME_PRESETS : THEME_PRESETS.slice(0, PRESET_PREVIEW_COUNT);
+
+  const genProgress = (title) => (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
+        Generation Progress
+      </div>
+      <GenerationProgress
+        variant="inline"
+        open
+        status={aiGen.status}
+        text={aiGen.text}
+        error={aiGen.error}
+        model={aiGen.model}
+        startedAt={aiGen.startedAt}
+        cached={aiGen.cached}
+        generationId={aiGen.generationId}
+        title={title}
+      />
+    </div>
+  );
+  const showProgress = aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error';
 
   return (
     <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="section-heading">Judge UI Configuration</div>
+      <div className="section-heading" style={{ margin: 0 }}>Judge UI Configuration</div>
 
-      {/* Mode selector */}
+      {/* Mode selector — top-level switch */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>Judge UI Mode</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
@@ -89,25 +114,7 @@ const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiM
             <div>Judges get the <strong>standard scoring table</strong> instantly — dropdowns for each criterion, automatic totals and ranks. No AI generation, no waiting, fully offline-safe.</div>
           </div>
           <DefaultJudgeUIPreview contestants={contestants} criteria={criteria} contestName={contestName} />
-          {(aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error') && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
-                Generation Progress
-              </div>
-              <GenerationProgress
-                variant="inline"
-                open
-                status={aiGen.status}
-                text={aiGen.text}
-                error={aiGen.error}
-                model={aiGen.model}
-                startedAt={aiGen.startedAt}
-                cached={aiGen.cached}
-                generationId={aiGen.generationId}
-                title="Saving Judge UI"
-              />
-            </div>
-          )}
+          {showProgress && genProgress('Saving Judge UI')}
         </>
       ) : (
         <>
@@ -116,110 +123,112 @@ const AIConfigSection = ({ aiPrompt, setAiPrompt, aiProvider, setAiProvider, aiM
             <div>This prompt controls the <strong>theme only</strong>. The AI always follows the standard Judge UI layout — <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--surface2)', padding: '1px 5px', borderRadius: 4 }}>No. | Name | each criterion | Total | Rank</code> — with exactly one dropdown per scoring cell and horizontal scroll for wide tables. Pick a theme preset or write your own below.</div>
           </div>
 
-          {/* Provider + Model — one unified panel */}
-          <div style={{ border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface2)', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', padding: '12px 14px 10px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)' }}>AI Provider & Model</div>
-           
+          {/* Two-column workspace: config (left) · presets + progress (right) */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+            <div>
+              <div className="flex flex-col gap-5 xl:sticky xl:top-6">
+                {/* Provider + Model — one unified panel */}
+                <div style={{ border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface2)', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', padding: '12px 14px 10px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)' }}>AI Provider &amp; Model</div>
+                  </div>
+
+                  {providers.length === 0 ? (
+                    <div style={{ fontSize: 12, color: 'var(--text3)', padding: '0 14px 14px' }}>Loading AI providers…</div>
+                  ) : (
+                    <div style={{ padding: '0 14px 14px', display: 'grid', gap: 10 }}>
+                      {/* Provider pills */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
+                        {providers.map(p => {
+                          const isActive = aiProvider === p.provider;
+                          return (
+                            <button key={p.provider} onClick={() => setAiProvider(p.provider)} title={`Use ${p.label} to generate the Judge UI`}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 6, textAlign: 'left', border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border)', background: isActive ? 'var(--accent-lt)' : 'var(--surface)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', boxShadow: isActive ? '0 0 0 3px var(--accent-lt)' : 'none' }}>
+                              <span style={{ width: 8, height: 8, borderRadius: 999, background: isActive ? 'var(--accent)' : 'var(--text3)', flexShrink: 0 }} />
+                              <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? 'var(--accent)' : 'var(--text1)' }}>{p.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Model — scoped to the selected provider */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="field-label" style={{ margin: 0, flexShrink: 0, minWidth: 44 }}>Model</div>
+                        <select
+                          className="field-input"
+                          title="Choose which model of the selected provider generates the Judge UI"
+                          style={{ appearance: 'none', cursor: 'pointer', flex: 1 }}
+                          value={selectedModel}
+                          onChange={e => setAiModel(e.target.value)}
+                          disabled={!models.length}
+                        >
+                          {models.map((m) => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Summary line */}
+                      <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.5, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                        <strong style={{ color: 'var(--text1)' }}>{selectedModel}</strong>{currentProvider ? ` (${currentProvider.label})` : ''} generates the Judge UI when you save.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Prompt + quick tags */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div className="field-label" style={{ margin: 0 }}>AI Design Prompt</div>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>{aiPrompt.length} chars</span>
+                  </div>
+                  <textarea className="field-input" style={{ minHeight: 120, resize: 'vertical' }} placeholder='Or write your own: "Design a Judge UI with..."' value={aiPrompt} onChange={e => { setAiPrompt(e.target.value); setActiveTheme(null); }} />
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                    {QUICK_TAGS.map(tag => (
+                      <button key={tag} onClick={() => appendTag(tag)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text3)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-bd)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)'; }}>
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {providers.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--text3)', padding: '0 14px 14px' }}>Loading AI providers…</div>
-            ) : (
-              <div style={{ padding: '0 14px 14px', display: 'grid', gap: 10 }}>
-                {/* Provider pills */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
-                  {providers.map(p => {
-                    const isActive = aiProvider === p.provider;
+            <div className="flex flex-col gap-5">
+              {/* Theme presets — collapsed by default */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)' }}>Design theme presets</div>
+                  {THEME_PRESETS.length > PRESET_PREVIEW_COUNT && (
+                    <button type="button" onClick={() => setShowAllPresets(v => !v)}
+                      style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {showAllPresets ? 'Show less' : `Show all (${THEME_PRESETS.length})`}
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+                  {visiblePresets.map(theme => {
+                    const isActive = activeTheme === theme.name;
                     return (
-                      <button key={p.provider} onClick={() => setAiProvider(p.provider)} title={`Use ${p.label} to generate the Judge UI`}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 6, textAlign: 'left', border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border)', background: isActive ? 'var(--accent-lt)' : 'var(--surface)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', boxShadow: isActive ? '0 0 0 3px var(--accent-lt)' : 'none' }}>
-                        <span style={{ width: 8, height: 8, borderRadius: 999, background: isActive ? 'var(--accent)' : 'var(--text3)', flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? 'var(--accent)' : 'var(--text1)' }}>{p.label}</span>
+                      <button key={theme.name} onClick={() => selectTheme(theme)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, padding: '10px 12px', borderRadius: 6, textAlign: 'left', border: isActive ? '2px solid var(--accent-mid)' : '1px solid var(--border)', background: isActive ? 'var(--accent-lt)' : 'var(--surface2)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', boxShadow: isActive ? '0 0 0 3px var(--accent-lt)' : 'none' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {theme.swatches.map((color, i) => (
+                            <div key={i} style={{ width: 13, height: 13, borderRadius: 3, background: color, border: ['#ffffff', '#fdf8f0', '#f8fafc', '#e2e8f0', '#d4f7e8', '#fbd5e0', '#d8d3f5', '#e8dcc0', '#f9f3e7'].includes(color) ? '1px solid var(--border)' : 'none' }} />
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? 'var(--accent)' : 'var(--text1)' }}>{theme.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{theme.desc}</div>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Model — scoped to the selected provider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className="field-label" style={{ margin: 0, flexShrink: 0, minWidth: 44 }}>Model</div>
-                  <select
-                    className="field-input"
-                    title="Choose which model of the selected provider generates the Judge UI"
-                    style={{ appearance: 'none', cursor: 'pointer', flex: 1 }}
-                    value={selectedModel}
-                    onChange={e => setAiModel(e.target.value)}
-                    disabled={!models.length}
-                  >
-                    {models.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Summary line */}
-                <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.5, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-                  <strong style={{ color: 'var(--text1)' }}>{selectedModel}</strong>{currentProvider ? ` (${currentProvider.label})` : ''} generates the Judge UI when you save.
-                 
-                </div>
               </div>
-            )}
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>Design theme presets</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
-              {THEME_PRESETS.map(theme => {
-                const isActive = activeTheme === theme.name;
-                return (
-                  <button key={theme.name} onClick={() => selectTheme(theme)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, padding: '10px 12px', borderRadius: 6, textAlign: 'left', border: isActive ? '2px solid var(--accent-mid)' : '1px solid var(--border)', background: isActive ? 'var(--accent-lt)' : 'var(--surface2)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit', boxShadow: isActive ? '0 0 0 3px var(--accent-lt)' : 'none' }}>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {theme.swatches.map((color, i) => (
-                        <div key={i} style={{ width: 13, height: 13, borderRadius: 3, background: color, border: ['#ffffff', '#fdf8f0', '#f8fafc', '#e2e8f0', '#d4f7e8', '#fbd5e0', '#d8d3f5', '#e8dcc0', '#f9f3e7'].includes(color) ? '1px solid var(--border)' : 'none' }} />
-                      ))}
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? 'var(--accent)' : 'var(--text1)' }}>{theme.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{theme.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div className="field-label" style={{ margin: 0 }}>AI Design Prompt</div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>{aiPrompt.length} chars</span>
-            </div>
-            <textarea className="field-input" style={{ minHeight: 120 }} placeholder='Or write your own: "Design a Judge UI with..."' value={aiPrompt} onChange={e => { setAiPrompt(e.target.value); setActiveTheme(null); }} />
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              {QUICK_TAGS.map(tag => (
-                <button key={tag} onClick={() => appendTag(tag)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text3)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-bd)'; e.currentTarget.style.color = 'var(--accent)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)'; }}>
-                  + {tag}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {(aiGen?.active || aiGen?.status === 'done' || aiGen?.status === 'error') && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
-                Generation Progress
-              </div>
-              <GenerationProgress
-                variant="inline"
-                open
-                status={aiGen.status}
-                text={aiGen.text}
-                error={aiGen.error}
-                model={aiGen.model}
-                startedAt={aiGen.startedAt}
-                cached={aiGen.cached}
-                generationId={aiGen.generationId}
-              />
+              {showProgress && genProgress()}
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

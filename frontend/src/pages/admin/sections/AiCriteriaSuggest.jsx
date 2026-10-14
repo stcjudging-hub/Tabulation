@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import { Brain, X, Check } from 'lucide-react';
+import { Sparkles, WandSparkles, Check, X } from 'lucide-react';
 import apiClient from '../../../services/api';
-import { card } from './card.js';
 
-// ── AI-suggested criteria ────────────────────────────────────────────────────
-// The admin describes the event; the backend asks the school's AI provider for
-// a criteria set whose weights total 100. The suggestions appear below as
-// editable rows the admin can tweak, then Apply (replaces the criteria list) or
-// Discard. Nothing is saved until the admin hits Save Config as usual.
-export default function AiCriteriaSuggest({ setCriteria, contestName }) {
-  const [description, setDescription] = useState('');
-  const [rows, setRows]               = useState([]);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [applied, setApplied]         = useState(false);
+// AI prompt → suggested criteria. Read-only proposal; "Use and edit" copies the
+// rows into the editable criteria list below.
+const DEFAULT_DESCRIPTION =
+  'A solo singing contest for senior high students. Each singer performs one OPM song.';
 
-  const total = rows.reduce((s, r) => s + Number(r.weight || 0), 0);
+export default function AiCriteriaSuggest({ setCriteria }) {
+  const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [applied, setApplied] = useState(false);
 
   const suggest = async () => {
     const desc = description.trim();
@@ -33,7 +30,12 @@ export default function AiCriteriaSuggest({ setCriteria, contestName }) {
         setError('The AI did not return any criteria. Please try again.');
         setRows([]);
       } else {
-        setRows(list.map((c, i) => ({ id: `ai-${i}`, name: c.name, weight: c.percentage })));
+        setRows(list.map((c, i) => ({
+          id: `ai-${i}`,
+          name: c.name,
+          description: c.description || '',
+          percentage: Number(c.percentage) || 0,
+        })));
       }
     } catch (err) {
       setError(err.message || 'Could not get suggestions. Please try again.');
@@ -42,161 +44,138 @@ export default function AiCriteriaSuggest({ setCriteria, contestName }) {
     }
   };
 
-  const updateRow = (id, field, value) => {
-    setRows((prev) => prev.map((r) => (r.id === id
-      ? { ...r, [field]: field === 'weight' ? Math.max(0, Number(value) || 0) : value }
-      : r)));
-    setApplied(false);
-  };
-
-  const apply = () => {
+  // Copy suggestions into the criteria list for editing (items use `weight`).
+  const useAndEdit = () => {
     setCriteria(rows.map((r, i) => ({
       id: `ai-${Date.now()}-${i}`,
       name: String(r.name || '').trim() || `Criterion ${i + 1}`,
-      weight: Number(r.weight) || 0,
+      weight: Number(r.percentage) || 0,
     })));
     setApplied(true);
   };
 
-  const discard = () => {
+  const reject = () => {
     setRows([]);
     setError('');
     setApplied(false);
   };
 
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{
-          width: 28, height: 28, borderRadius: 6, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'var(--accent-lt)', color: 'var(--accent)', border: '1px solid var(--accent-bd)',
-        }}>
-          <Brain size={15} />
-        </span>
-        <div>
-          <div className="section-heading" style={{ margin: 0 }}>AI Suggested Criteria</div>
-          <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-            Describe your event and let the AI propose criteria with weights that total 100%.
-          </div>
+    <div className="ai-ui-font w-full max-w-[520px]">
+      {/* Heading */}
+      <h2 className="text-[28px] font-bold leading-tight text-[var(--text1)]">AI Prompt</h2>
+      <p className="mt-1 text-[14px] text-[var(--text2)]">
+        The AI only suggests. You decide what to keep. The AI never scores or ranks.
+      </p>
+
+      {/* Main card */}
+      <div
+        className="mt-6 rounded-2xl p-5 shadow-sm"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={20} style={{ color: 'var(--purple)' }} />
+          <span className="text-base font-semibold text-[var(--text1)]">Suggest criteria</span>
         </div>
-      </div>
 
-      <textarea
-        className="field-input"
-        style={{ minHeight: 74, resize: 'vertical' }}
-        placeholder='e.g. "Folk dance contest for Grade 10 — judged on choreography, cultural authenticity, synchronization, costume, and stage presence."'
-        value={description}
-        onChange={(e) => { setDescription(e.target.value); setError(''); }}
-        disabled={loading}
-      />
+        <label className="mt-4 mb-2 block text-sm font-medium text-[var(--text2)]">
+          Describe your event
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => { setDescription(e.target.value); setError(''); }}
+          disabled={loading}
+          className="w-full resize-y rounded-[10px] p-3 text-[15px] leading-relaxed text-[var(--text1)] outline-none transition focus:border-[var(--accent-mid)] focus:ring-2 focus:ring-[var(--accent-lt)]"
+          style={{ minHeight: 80, background: 'var(--surface)', border: '1px solid var(--border)' }}
+        />
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={suggest}
           disabled={loading}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '9px 16px', borderRadius: 6, fontSize: 13, fontWeight: 700,
-            fontFamily: 'inherit', cursor: loading ? 'wait' : 'pointer',
-            border: '1.5px solid var(--accent)', background: 'var(--accent)', color: '#fff',
-            opacity: loading ? 0.75 : 1,
-          }}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-mid)] disabled:opacity-70"
+          style={{ cursor: loading ? 'wait' : 'pointer' }}
         >
-          {loading ? 'Thinking…' : 'Suggest with AI'}
+          <WandSparkles size={16} />
+          {loading ? 'Thinking…' : 'Suggest criteria'}
         </button>
-        {contestName ? (
-          <button
-            type="button"
-            onClick={() => setDescription(contestName)}
-            disabled={loading}
-            style={{
-              padding: '9px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              fontFamily: 'inherit', cursor: 'pointer',
-              border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)',
-            }}
+
+        {error ? (
+          <div
+            className="mt-4 rounded-lg px-3 py-2 text-xs"
+            style={{ color: 'var(--red)', background: 'var(--red-lt)', border: '1px solid var(--red)' }}
           >
-            Use contest name
-          </button>
+            {error}
+          </div>
         ) : null}
       </div>
 
-      {error ? (
-        <div style={{
-          fontSize: 12, color: '#b91c1c', background: '#fee2e2',
-          border: '1px solid #fca5a5', borderRadius: 6, padding: '8px 12px',
-        }}>
-          {error}
-        </div>
-      ) : null}
-
+      {/* Suggestion panel */}
       {rows.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            color: 'var(--text3)',
-          }}>
-            <span>Proposed criteria — edit before applying</span>
-            <span style={{ color: total === 100 ? 'var(--accent)' : '#b45309' }}>{total}%</span>
-          </div>
-
-          {rows.map((r) => (
-            <div key={r.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
-              borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)',
-            }}>
-              <input
-                type="text"
-                value={r.name}
-                onChange={(e) => updateRow(r.id, 'name', e.target.value)}
-                className="bg-transparent border-none p-0 flex-1 outline-none text-sm font-semibold"
-                style={{ color: 'var(--text1)' }}
-              />
-              <input
-                type="number"
-                value={r.weight}
-                onChange={(e) => updateRow(r.id, 'weight', e.target.value)}
-                className="w-16 py-1 px-2 rounded-sm border text-right text-sm font-bold outline-none"
-                style={{ border: '1.5px solid var(--border)', background: 'var(--surface2)', color: 'var(--accent)' }}
-              />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text3)' }}>%</span>
-            </div>
-          ))}
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={apply}
+        <div
+          className="mt-6 rounded-[14px] p-4"
+          style={{ background: 'var(--purple-bg)', border: '1px solid var(--purple-bd)' }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[15px] font-medium text-[var(--text1)]">Suggestion</span>
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-medium"
               style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 700,
-                fontFamily: 'inherit', cursor: 'pointer',
-                border: '1.5px solid var(--accent)', background: 'var(--accent-lt)', color: 'var(--accent)',
+                color: 'var(--purple)',
+                background: 'var(--purple-lt)',
+                border: '1px solid var(--purple-bd)',
               }}
             >
-              <Check size={13} /> Apply to criteria
+              <Sparkles size={12} /> AI-generated
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2">
+            {rows.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between rounded-[10px] px-3.5 py-3"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              >
+                <div className="min-w-0">
+                  <div className="text-[15px] font-semibold text-[var(--text1)]">{r.name}</div>
+                  {r.description ? (
+                    <div className="mt-0.5 text-[13px] text-[var(--text2)]">{r.description}</div>
+                  ) : null}
+                </div>
+                <div
+                  className="shrink-0 pl-3 text-sm font-bold tabular-nums text-[var(--text1)]"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {r.percentage}%
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={useAndEdit}
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-mid)]"
+            >
+              <Check size={16} /> Use and edit
             </button>
             <button
               type="button"
-              onClick={discard}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 700,
-                fontFamily: 'inherit', cursor: 'pointer',
-                border: '1px solid var(--border)', background: 'var(--surface2)', color: 'var(--text2)',
-              }}
+              onClick={reject}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-[var(--text1)] transition hover:bg-[var(--surface2)]"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
-              <X size={13} /> Discard
+              <X size={16} /> Reject
             </button>
           </div>
 
-          {applied && (
-            <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>
-              Applied — the criteria list below now holds the AI suggestions. Review and edit, then Save Config.
+          {applied ? (
+            <div className="mt-3 text-xs font-medium" style={{ color: 'var(--accent-mid)' }}>
+              Added to the criteria list below — review and edit, then Save Config.
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

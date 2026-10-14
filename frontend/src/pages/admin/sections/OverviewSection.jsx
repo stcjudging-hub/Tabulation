@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   Trash2, 
   Users, Scale, ListChecks, PieChart, LayoutDashboard, Trophy,
@@ -98,6 +98,8 @@ const OverviewSection = ({
       ))}
     </div>
 
+    {/* Two-column on desktop: summary left, criteria right · stacks on tablet/mobile */}
+    <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
     {/* Quick Summary */}
     <div style={card}>
       <div className="flex items-center gap-2 mb-4">
@@ -159,6 +161,7 @@ const OverviewSection = ({
           </div>
         )}
       </div>
+    </div>
     </div>
 
     {/* Danger Zone */}

@@ -268,6 +268,10 @@ const JudgesSection = ({ judgeCount, setJudgeCount, calculationType, setCalculat
         {isJudgeLocked ? 'Judges are currently LOCKED — scoring is disabled on the judge portal.' : 'Judges are UNLOCKED — scoring is active on the judge portal.'}
       </div>
 
+      {/* Two columns on desktop · stacks on tablet/mobile */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div>
+          <div className="flex flex-col gap-6 xl:sticky xl:top-6">
       <JudgePasswordManager />
 
       <div>
@@ -278,7 +282,9 @@ const JudgesSection = ({ judgeCount, setJudgeCount, calculationType, setCalculat
           <button className="counter-btn" onClick={() => setJudgeCount(j => Math.min(20, j + 1))}>+</button>
         </div>
       </div>
-
+          </div>
+        </div>
+        <div className="flex flex-col gap-6">
       <div>
         <div className="field-label" style={{ marginBottom: 12 }}>Result Calculation Type</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="sm:flex-row">
@@ -335,6 +341,8 @@ const JudgesSection = ({ judgeCount, setJudgeCount, calculationType, setCalculat
           </div>
         </div>
       )}
+        </div>
+      </div>
 
       <ExplanationModal
         open={!!help}

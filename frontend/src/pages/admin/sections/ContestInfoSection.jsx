@@ -51,6 +51,8 @@ const ContestInfoSection = ({
   return (
     <div style={{ ...card, display: "flex", flexDirection: "column", gap: 20 }}>
       <div className="section-heading">Contest Information</div>
+      {/* Two columns on desktop · stacks on tablet/mobile */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <div>
         <div className="field-label">Contest Name</div>
         <input
@@ -136,6 +138,7 @@ const ContestInfoSection = ({
             </span>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

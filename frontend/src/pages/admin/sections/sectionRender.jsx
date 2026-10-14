@@ -251,10 +251,15 @@ const SectionRender = ({
         />
       )}
       {activeNav === 'criteria' && (
-        <>
-          <AiCriteriaSuggest setCriteria={setCriteria} contestName={contestName} />
+        /* Two-column on wide screens; stacks with a generous gap on smaller ones */
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)]">
+          <div>
+            <div className="xl:sticky xl:top-6">
+              <AiCriteriaSuggest setCriteria={setCriteria} contestName={contestName} />
+            </div>
+          </div>
           <CriteriaManager criteria={criteria} setCriteria={setCriteria} newCrit={newCrit} setNewCrit={setNewCrit} addCriterion={addCriterion} />
-        </>
+        </div>
       )}
       {activeNav === 'judges' && (
         <JudgesSection

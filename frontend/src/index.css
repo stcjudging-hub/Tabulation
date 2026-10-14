@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ── Large-display breakpoints (beyond Tailwind's 2xl = 1536px) ──
@@ -12,6 +12,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 body { font-family: 'Inter', sans-serif; }
+
+/* ── AI Prompt section font (Plus Jakarta Sans, controls inherit) ── */
+.ai-ui-font { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+.ai-ui-font :where(textarea, button, input) { font-family: inherit; }
 
 /* ── Editorial headings (Playfair serif) ── */
 .heading-serif {
@@ -41,6 +45,10 @@ body { font-family: 'Inter', sans-serif; }
   --gold:      #C9A227;
   --gold-lt:   rgba(201,162,39,0.14);
   --gold-bd:   rgba(201,162,39,0.35);
+  --purple:    #7C3AED;
+  --purple-lt: #F3EDFF;
+  --purple-bd: #E4E0F7;
+  --purple-bg: #F8F7FF;
   --red:       #be123c;
   --red-lt:    #fff1f2;
   --green:     #1B4332;
@@ -70,6 +78,10 @@ body { font-family: 'Inter', sans-serif; }
   --gold:      #F2C94C;
   --gold-lt:   rgba(242,201,76,0.14);
   --gold-bd:   rgba(242,201,76,0.38);
+  --purple:    #A78BFA;
+  --purple-lt: rgba(167,139,250,0.16);
+  --purple-bd: rgba(167,139,250,0.30);
+  --purple-bg: rgba(124,58,237,0.12);
   --red:       #FB7185;
   --red-lt:    #2A1418;
   --green:     #4ADE80;
