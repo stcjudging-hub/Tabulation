@@ -8,7 +8,7 @@ import {CriteriaHeader,EncryptedBadge,CardHeaderStrip,
   
   JudgeFooter,JudgeHeader,
   LoadingSpinner,
-  ScoringCard,SubmitButton
+  ScoringCard,SubmitButton,SubmitConfirmModal
 } from './components'
 import { SuccessModal, ErrorModal, WarningModal, ConfirmModal } from '../../components/ui';
 
@@ -24,9 +24,12 @@ function JudgeTable() {
     waitSeconds,
     isComplete,
     modal,
+    submitConfirm,
     isOnline,
     closeModal,
     submitToDB,
+    confirmSubmit,
+    cancelSubmit,
     updateJudge,
   } = useJudgeSystem();
 
@@ -97,6 +100,19 @@ function JudgeTable() {
         message={modal.message}
         onClose={closeModal}
         onConfirm={modal.onConfirm}
+      />
+
+      <SubmitConfirmModal
+        isOpen={submitConfirm.show}
+        onConfirm={confirmSubmit}
+        onCancel={cancelSubmit}
+        judge={selectedJudge}
+        contestName={contestName}
+        contestantCount={config.contestants?.length || 0}
+        criteriaCount={config.criteria?.length || 0}
+        submitting={loading}
+        primary={primary}
+        secondary={secondary}
       />
 
       <JudgeHeader

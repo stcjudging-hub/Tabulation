@@ -182,6 +182,7 @@ export const useJudgeSystem = () => {
   const [uiRefreshing,  setUiRefreshing]  = useState(false);
   const [waitSeconds,   setWaitSeconds]   = useState(0);
   const [isComplete,    setIsComplete]    = useState(false);
+  const [submitConfirm, setSubmitConfirm] = useState({ show: false });
   const [modal,         setModal]         = useState({ show: false, title: '', message: '', type: 'success' });
 // Kept only as a momentary gate before STEP 2 renders the built-in scoring
   // table. The judge is never left on an endless "being generated" screen —
@@ -198,6 +199,10 @@ export const useJudgeSystem = () => {
   const selectedJudgeRef = useRef(selectedJudge);
   const configRef        = useRef(config);
   const dynamicUIRef     = useRef('');
+  // Tracks the previous completion state so the auto-confirm only appears when
+  // the judge transitions from an incomplete sheet to a complete one — not on
+  // every single edit made after the sheet is already full.
+  const completeRef      = useRef(false);
 
   configRef.current = config;
 
@@ -234,7 +239,10 @@ export const useJudgeSystem = () => {
   }, []);
 
   const evaluateCompleteness = useCallback(() => {
-    setIsComplete(allScoresFilled());
+    const complete = allScoresFilled();
+    completeRef.current = complete;
+    setIsComplete(complete);
+    return complete;
   }, [allScoresFilled]);
 
   const recalculateRow = (contestantId) => {
@@ -589,7 +597,7 @@ export const useJudgeSystem = () => {
 
   // ── Submit scores ────────────────────────────────────────────────
   const submittingRef = useRef(false);
-  const performSubmitRef = useRef(null);
+  const submitToDBRef = useRef(null);
 
   const performSubmit = async () => {
     if (submittingRef.current) return;
@@ -650,28 +658,45 @@ export const useJudgeSystem = () => {
     }
   };
 
-  performSubmitRef.current = performSubmit;
+  const cancelSubmit = useCallback(() => {
+    setSubmitConfirm({ show: false });
+    // Re-hydrate from the local cache so a cancelled review leaves the sheet
+    // exactly as the judge left it.
+    window.setTimeout(restoreScores, 0);
+  }, [restoreScores]);
+
+  const confirmSubmit = () => {
+    if (!submitConfirm.show) return;
+    setSubmitConfirm({ show: false });
+    performSubmit();
+  };
 
   const submitToDB = () => {
+    if (submittingRef.current) return;
     if (!selectedJudge) return showStatus('Error', 'Please select a judge.', 'error');
     if (!allScoresFilled()) {
       return showStatus('Incomplete Scores', 'Please complete the scoring before submitting.', 'warning');
     }
-    showStatus('Confirm Submission', 'Are you sure you want to submit these scores?', 'confirm', () => {
-      closeModal();
-      performSubmit();
-    });
+    setSubmitConfirm({ show: true });
   };
+
+  submitToDBRef.current = submitToDB;
 
   useEffect(() => {
     const handleChange = (e) => {
       if (!e.target?.classList?.contains('score-dropdown')) return;
-      evaluateCompleteness();
+
+      const wasComplete = completeRef.current;
+      const nowComplete = evaluateCompleteness();
+
       if (e.target.value === '' || e.target.value === null) return;
-      const dropdowns = document.querySelectorAll('.score-dropdown');
-      const filled = dropdowns.length > 0 &&
-        Array.from(dropdowns).every(el => el.value !== '' && el.value !== null);
-      if (filled) performSubmitRef.current();
+
+      // The final score was just filled in → open the confirmation step instead
+      // of silently submitting. Later edits on an already-complete sheet do
+      // not re-open it; the judge can still use the main Submit Scores button.
+      if (nowComplete && !wasComplete) {
+        submitToDBRef.current?.();
+      }
     };
     document.addEventListener('change', handleChange);
     return () => document.removeEventListener('change', handleChange);
@@ -679,9 +704,13 @@ export const useJudgeSystem = () => {
 
   useEffect(() => {
     if (!dynamicUI) return;
+    // Capture the restored sheet's completion state immediately and once more
+    // after hydration settles, so changing a score on an already-complete sheet
+    // doesn't look like a fresh completion.
+    evaluateCompleteness();
     const t = setTimeout(() => evaluateCompleteness(), 500);
     return () => clearTimeout(t);
-  }, [dynamicUI, evaluateCompleteness]);
+  }, [dynamicUI, selectedJudge, evaluateCompleteness]);
 
   const updateJudge = useCallback((val) => {
     if (!val) return;
@@ -714,9 +743,12 @@ export const useJudgeSystem = () => {
     waitSeconds,
     isComplete,
     modal,
+    submitConfirm,
     isOnline,
     closeModal,
     submitToDB,
+    confirmSubmit,
+    cancelSubmit,
     updateJudge,
   };
 };

@@ -17,6 +17,7 @@ export {default as OfflineBanner} from './OfflineBanner'
 export {default as ScoringCard} from './ScoringCard'
 export {default as ScrollHint} from './ScrollHint'
 export {default as SubmitButton} from './SubmitButton'
+export {default as SubmitConfirmModal} from './SubmitConfirmModal'
 export {default as AiDebugConsole} from './AiDebugConsole'
 
 
