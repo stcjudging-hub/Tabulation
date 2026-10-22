@@ -196,19 +196,6 @@ const helpContent = {
       ],
     },
   },
-  shared: {
-    title: 'Shared',
-    description: 'Tied contestants all receive the first position among them. Two contestants tied for 2nd and 3rd both receive 2; the next contestant follows at 4.',
-    table: {
-      headers: ['Contestant', 'Score', 'Final Rank'],
-      rows: [
-        ['Contestant 1', '90', '1'],
-        [{ v: 'Contestant 2', highlight: true }, '85', { v: '2', highlight: true }],
-        [{ v: 'Contestant 3', highlight: true }, '85', { v: '2', highlight: true }],
-        ['Contestant 4', '70', '4'],
-      ],
-    },
-  },
   sequential: {
     title: 'Sequential',
     description: 'Tied contestants get consecutive positions instead of sharing. Two contestants tied for 2nd and 3rd receive 2 and 3; the next contestant follows at 4.',
@@ -236,7 +223,6 @@ const JudgesSection = ({ judgeCount, setJudgeCount, calculationType, setCalculat
 
   const tieOpts = [
     { id: 'midrank',    title: 'Midrank',    desc: 'Tied contestants share the average position — e.g. 1, 2.5, 2.5, 4.', help: helpContent.midrank },
-    { id: 'shared',     title: 'Shared',     desc: 'Tied contestants share the first position — e.g. 1, 2, 2, 4.', help: helpContent.shared },
     { id: 'sequential', title: 'Sequential', desc: 'Tied contestants get consecutive positions — e.g. 1, 2, 3, 4.', help: helpContent.sequential },
   ];
 

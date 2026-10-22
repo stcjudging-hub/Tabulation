@@ -119,7 +119,9 @@ function Dashboard() {
       setJudgeCount(Number(settings.judge_count ?? 3));
       setCalculationType(settings.computation_type ?? "average");
       setCustomBase(settings.custom_base ?? "average");
-      setTieBreakMethod(settings.tie_break_method ?? "midrank");
+      // 'shared' was removed from the UI; fall back to the default so the
+      // Tie-Break Method always shows a selectable option.
+      setTieBreakMethod(settings.tie_break_method === 'shared' ? 'midrank' : settings.tie_break_method ?? 'midrank');
       setContestants(
         (rawC || []).map((c) => ({ id: String(c.id), name: c.name, number: c.entry_number }))
       );
