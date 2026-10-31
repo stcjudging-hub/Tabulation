@@ -40,12 +40,12 @@ export default function HeroSection({ navigate }) {
             className="animate-fade-in-up delay-2 text-3xl sm:text-4xl md:text-6xl 2xl:text-7xl font-bold text-[#14201A] mb-4 sm:mb-6 leading-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
-            Professional Online Judging Platform{' '}
-            <span className="text-[#1B4332] block sm:inline">for Schools & Competitions</span>
+            Smart-Evaluation: Smarter Judging. Faster Tabulation. Better Results.{' '}
+         
           </h1>
 
           <p className="animate-fade-in-up delay-3 text-base sm:text-lg 2xl:text-xl text-[#4B5A4D] mb-8 sm:mb-10 max-w-2xl xl:max-w-3xl leading-relaxed">
-            Create your school's judging workspace, manage judges, contestants, and scoring in real time.
+          An AI-assisted web-based platform designed to streamline event judging, manage contestants, and automate score tabulation for school events.
           </p>
 
           <div className="animate-fade-in-up delay-4 flex flex-wrap gap-3 sm:gap-4">
