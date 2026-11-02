@@ -91,11 +91,14 @@ CREATE TABLE IF NOT EXISTS `contestants` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `school_id` INT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
+  `name_unique` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    GENERATED ALWAYS AS (TRIM(`name`)) STORED,
   `entry_number` INT DEFAULT 0,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY `school_id` (`school_id`),
   KEY `entry_number` (`entry_number`),
+  UNIQUE KEY `uq_contestants_school_name` (`school_id`, `name_unique`),
   CONSTRAINT `fk_contestants_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -4,6 +4,7 @@ import {
   X, LogOut, TrophyIcon, Moon, Sun, Settings, History
 } from 'lucide-react';
 import apiClient from '../../../services/api';
+import { sameContestantName } from '../../../utils/contestantNames';
 import CriteriaManager from './CreteriaManager';
 import AiCriteriaSuggest from './AiCriteriaSuggest';
 import { useContestContext } from '../../../context/ContestContext';
@@ -210,6 +211,7 @@ const SectionRender = ({
   aiGen,
 }) => {
   const { isJudgeLocked } = useContestContext();
+  const [contestantError, setContestantError] = useState('');
 
   const addCriterion = () => {
     if (!newCrit.trim()) return;
@@ -220,9 +222,14 @@ const SectionRender = ({
 
   const addContestant = () => {
     if (!newName.trim()) return;
+    if (contestants.some((contestant) => sameContestantName(contestant.name, newName))) {
+      setContestantError(`Contestant "${newName.trim()}" already exists in this contest. Use a different name.`);
+      return;
+    }
     const num = contestants.length + 1;
     setContestants([...contestants, { id: Date.now().toString(), name: newName.trim(), number: num }]);
     setNewName('');
+    setContestantError('');
   };
 
   return (
@@ -270,7 +277,7 @@ const SectionRender = ({
         />
       )}
       {activeNav === 'contestants' && (
-        <ContestantsSection contestants={contestants} setContestants={setContestants} newName={newName} setNewName={setNewName} addContestant={addContestant} />
+        <ContestantsSection contestants={contestants} setContestants={setContestants} newName={newName} setNewName={(value) => { setNewName(value); setContestantError(''); }} addContestant={addContestant} error={contestantError} />
       )}
       {activeNav === 'system' && (
         <SystemConfigSection

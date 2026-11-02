@@ -1,5 +1,5 @@
 import { card } from './card.js'
-const ContestantsSection = ({ contestants, setContestants, newName, setNewName, addContestant }) => (
+const ContestantsSection = ({ contestants, setContestants, newName, setNewName, addContestant, error }) => (
   <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 16 }}>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
       <div className="section-heading" style={{ margin: 0 }}>Contestants</div>
@@ -13,9 +13,10 @@ const ContestantsSection = ({ contestants, setContestants, newName, setNewName, 
           <div style={{ background: 'var(--surface2)', border: '1.5px dashed var(--accent-bd)', borderRadius: 6, padding: 14 }}>
             <div className="field-label">Add Contestant</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              <input className="field-input" style={{ flex: 1, minWidth: 140 }} placeholder="Full name…" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addContestant()} />
+              <input className="field-input" style={{ flex: 1, minWidth: 140 }} placeholder="Full name…" maxLength={255} aria-label="Contestant name" aria-invalid={!!error} aria-describedby={error ? 'contestant-name-error' : undefined} value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addContestant()} />
               <button className="btn-primary" onClick={addContestant} style={{ flexShrink: 0 }}>+ Add</button>
             </div>
+            {error && <p id="contestant-name-error" role="alert" style={{ color: '#be123c', fontSize: 13, marginTop: 8 }}>{error}</p>}
           </div>
         </div>
       </div>

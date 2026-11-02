@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../components/ui";
 import SectionRender from "./sections/sectionRender"
 import GenerationProgress from "./components/GenerationProgress";
 import { streamUiUi } from "../../utils/streamUi";
+import { findDuplicateContestant } from "../../utils/contestantNames";
 import apiClient from "../../services/api";
 import { useConfigChange } from '../../context/ConfigChangeContext';
 
@@ -156,6 +157,11 @@ function Dashboard() {
   // stays locked ("Generating UI…") until the AI finishes, so the admin always
   // knows the design is fully saved before the judges can grab it.
   const onSave = async () => {
+    const duplicate = findDuplicateContestant(contestants);
+    if (duplicate) {
+      showToast('error', `Contestant "${duplicate.name.trim()}" already exists in this contest. Use a different name.`);
+      return;
+    }
     setSaving(true);
     // Open the terminal immediately with the loading spinner for BOTH modes —
     // it stays streaming/spinner until the design (AI-generated or the static

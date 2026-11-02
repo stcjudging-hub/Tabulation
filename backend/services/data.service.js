@@ -274,10 +274,31 @@ async function resetData(schoolId) {
 // ── SAVE CONTEST CONFIG (transaction) ──
 async function saveConfig(schoolId, body) {
   const {
-    contest_name, judge_count, ai_prompt, contestants,
+    contest_name, judge_count, ai_prompt, contestants: incomingContestants,
     criteria, computation_type, contest_type, is_judge_locked,
     custom_base, tie_break_method, ai_model, ai_provider, ui_mode,
   } = body;
+
+  // Validate the complete incoming roster before any settings/scores are changed.
+  let contestants;
+  if (incomingContestants !== undefined) {
+    if (!Array.isArray(incomingContestants)) {
+      throw new HttpError(400, 'Contestants must be a list.');
+    }
+    const names = [];
+    const compareNames = new Intl.Collator('en', { sensitivity: 'base' });
+    contestants = incomingContestants.map((contestant) => {
+      const name = typeof contestant?.name === 'string' ? contestant.name.trim() : '';
+      if (!name || [...name].length > 255) {
+        throw new HttpError(400, 'Each contestant needs a name between 1 and 255 characters.');
+      }
+      if (names.some((existing) => compareNames.compare(existing, name) === 0)) {
+        throw new HttpError(409, `Contestant "${name}" already exists in this contest. Use a different name.`);
+      }
+      names.push(name);
+      return { ...contestant, name };
+    });
+  }
 
   console.log(`💾 [saveConfig] school=${schoolId} provider=${ai_provider} prompt="${ai_prompt?.slice(0,60)}..." model=${ai_model} ui_mode=${ui_mode} contestants=${contestants?.length} criteria=${criteria?.length}`);
 
@@ -507,7 +528,15 @@ async function saveConfig(schoolId, body) {
     }
 
     for (const [sql, vals] of waiting) {
-      await connection.execute(sql, vals);
+      try {
+        await connection.execute(sql, vals);
+      } catch (error) {
+        // MySQL is authoritative (including its collation rules and concurrent writes).
+        if (error.code === 'ER_DUP_ENTRY' && sql.startsWith('INSERT INTO contestants ')) {
+          throw new HttpError(409, 'A contestant with this name already exists in this contest. Use a different name.');
+        }
+        throw error;
+      }
     }
 
     await connection.commit();
